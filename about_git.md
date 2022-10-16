@@ -1,5 +1,5 @@
 ---
-theme: "moon"
+theme: "simple"
 transition: "default"
 ---
 
@@ -25,10 +25,10 @@ transition: "default"
 ## 目次
 
 1. Git の仕組み
-   1. データの保存方法
-   2. データ管理
+   1. ソースコード管理
+   2. 3つのエリア
 2. 修正コマンド
-   1. git restore
+   1. git revert
    2. git reset
 
 ---
@@ -37,9 +37,7 @@ transition: "default"
 
 ---
 
-## 1-1.データの保存方法
-
-このかたまりあとで消す
+## 1-1.ソースコード管理
 
 --
 
@@ -61,22 +59,57 @@ note:git graph などで差分を確認していると、差分だけ登録し�
   - コミット同士が疎結合になる
   - 前のコミットが消えてしまっているからあるコミットが復元できない、ということが起きない
 
----
+--
 
-## 1-1.ソースコード管理
+### スナップショットはどのように管理されているのか？
+
+ディレクトリ構造を反映した木構造とハッシュ値で管理されている
 
 --
 
-### 管理方法
+### ハッシュ値
 
-- 管理対象はファイルごとに圧縮され、ファイル中身に（ほぼ）固有の数値（ハッシュ値）で管理される
+ソースコードその他の管理対象は、ファイル中身に（ほぼ）固有の数値（ハッシュ値）で管理される
 
-このへんどうまとめようかな
-https://kftamang.github.io/post/git/
+```
+# ファイルの中身が「Hello, world!」になっているgreetingファイルを作成
+$ echo 'Hello, world!' > greeting
+ 
+# greetingのハッシュIDを表示
+$ git hash-object greeting
+af5626b4a114abcb82d63db7c8082c3c4756e51b
+```
+
+--
+
+### 木構造
+
+```
+# git add することで圧縮ファイルを作成
+$ git add greeting
+
+# .git以下のファイル構造を表示(以下は表示の一部を抜粋)
+$ tree .git
+.git
+├─ objects
+   ├─ af
+      └─ 5626b4a114abcb82d63db7c8082c3c4756e51b
+
+# コミットする
+$ git commit -m 'add greeting'
+```
+
+先程確認したハッシュIDのうち、先頭2文字がディレクトリ名として、残りがファイル名として保存されている
+
+--
+
+### 
+
+
 
 ---
 
-## 1-2.データ管理
+## 1-2.3つのエリア
 
 --
 
@@ -84,8 +117,7 @@ https://kftamang.github.io/post/git/
 
 <img src="area.png" style="border:none;box-shadow:none;">
 
-- ローカルリポジトリの中身
-  - .git
+ローカルリポジトリの中身 .git
 
 --
 
@@ -103,7 +135,7 @@ note:私は正直コミットの内容が登録されている、以外のこと
 
 --
 
-### コミットまでの流れをイメージで確認
+### コミットまでの流れを<br>イメージで確認
 
 1. index.html を作成
 2. git add
@@ -135,7 +167,7 @@ note:【2 の捕捉】コミットファイル内の情報は、ツリーファ�
 
 --
 
-### git コマンドは３つの Git オブジェクトに対して操作を行っている
+### git コマンドは以下の Git オブジェクトに対して操作を行っている
 
 - 圧縮ファイル
 - ツリーファイル
@@ -159,6 +191,8 @@ note:ということを意識してコマンドの処理を捉えていくと理
 
 - 1 つ以上の既存のコミットがある場合、関連するパッチが導入した変更を元に戻し、それらを記録するいくつかの新しいコミットを記録する
 - これには、作業ツリーがクリーンである必要がある
+
+note:公式より
 
 --
 
@@ -204,7 +238,7 @@ fatal: revert failed
 
 --
 
-### なぜマージコミットは通常のコマンドでは実行できないのか？
+### なぜマージコミットは通常の<br>コマンドでは実行できないのか？
 
 --
 
@@ -223,7 +257,7 @@ note:実際のVSCODEを立ち上げて、Synergyとかでマージされてる�
 
 ```sh
 # 使い方
-$ git show <merge commit>
+$ git show <打ち消したいcommit>
 # 例
 $ git show b7d7ef182809ce32ea1251e90dd75de5932d9518
 commit b7d7ef182809ce32ea1251e90dd75de5932d9518 (HEAD -> master)
@@ -252,7 +286,7 @@ git graph でも確認可能
 
 使い方
 ```
-$ git revert -m <親番号> <対象のcommit>
+$ git revert -m <親番号> <打ち消したいcommit>
 ```
 例
 ```
@@ -276,60 +310,27 @@ note:最近私の手違いで足立さんのコミットを削除してしまい
 
 --
 
-### イメージで理解
+### 例）以下のようなリポジトリが<br>あったとします
 
-<img src="reset.png" width="70%" style="border:none;box-shadow:none;">
-
-note:【参考】https://www-creators.com/archives/1069【メモ】revertでは打ち消した結果から新しいコミットを作成していましたが、resetでは引き数に指定したパスでローカルリポジトリ、インデックス、ワークツリーを更新する
+<img src="reset-start.png" width="70%" style="border:none;box-shadow:none;">
 
 --
 
-### コミットの修正
+### git reset --soft
 
-使い方
-```
-$ git reset --soft <commit>
-```
-例
-```
-# 直前のコミット内容を修正
-$ git reset --soft HEAD^
-```
-
+<img src="reset-soft.png" width="70%" style="border:none;box-shadow:none;">
 
 --
 
-### ステージの修正
+### git reset --mixed
 
-使い方
-```
-$ git reset --mixed <commit>
-$ git reset <commit>
-```
-例
-```
-# ステージの
-$ git reset 
-```
-
-note：mixedがデフォルトのため、オプションなしでも同じ結果が得られます
+<img src="reset-mixed.png" width="70%" style="border:none;box-shadow:none;">
 
 --
 
-### ステージの修正
+### git reset --hard
 
-使い方
-```
-$ git reset --hard <commit>
-```
-例
-```
-# ステージの
-$ git reset 
-```
-
-
-
+<img src="reset-hard.png" width="70%" style="border:none;box-shadow:none;">
 
 --
 
@@ -384,7 +385,7 @@ $ git restore --source=HEAD --staged --worktree <file>
 
 --
 
-### Gitのファイル管理が分かるコマンド
+### Gitのファイル管理が分かる<br>コマンド
 
 ```
 # Gitオブジェクトの中身の確認
@@ -398,7 +399,7 @@ note:Gitオブジェクトの中身を確認していくと、treeオブジェ�
 
 ---
 
-## 終わり
+## おわり
 
 ありがとうございました 🙉
 
